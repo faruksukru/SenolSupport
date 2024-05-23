@@ -67,6 +67,26 @@ public static void createContactOpp(List<Account> accList){
     }
 }
 
+public static void shareAccountsWithUser(List<Account> accList){
+   List<User> allUsers= [SELECT id FROM User WHERE ProfileId='00eWs000000DSZZ']; 
+    List<AccountShare> accShares = new List<AccountShare>();
+    for(Account acc:accList){
+        for(User u:allUsers){
+            AccountShare accShare = new AccountShare();
+            accShare.AccountId = acc.Id;
+            accShare.UserOrGroupId = u.Id;
+            accShare.AccountAccessLevel = 'Read';
+            accShare.ContactAccessLevel = 'Read';
+            accShare.OpportunityAccessLevel = 'None';
+            accShare.CaseAccessLevel = 'Read';
+            accShares.add(accShare);
+        }
+    }
+    if(accShares.size()>0){
+        INSERT accShares;
+    }
+}
+
 public static void contactOppUpdate (List<Account> accList, Map<Id,Account> oldAccMaps){
 
     Set<Id> accdIds = new Set<Id>();
@@ -76,7 +96,6 @@ public static void contactOppUpdate (List<Account> accList, Map<Id,Account> oldA
             accdIds.add(acc.Id);
          }
     }
-
     List<Account> accList2 = [SELECT Id, Name, Description, (SELECT Id, Name, Description FROM Contacts), (SELECT Id, Name, Description FROM Opportunities) FROM Account WHERE Id IN :accdIds];
     List<Contact> conUpdateList = new List<Contact>();
     List<Opportunity> oppUpdateList = new List<Opportunity>();
@@ -103,6 +122,16 @@ public static void contactOppUpdate (List<Account> accList, Map<Id,Account> oldA
     if(oppUpdateList.size()>0){
         UPDATE oppUpdateList;
     }
+}
+
+public static void deleteAccount (Map<Id,Account> oldAccMaps){
+    Set<Id> accdIds = oldAccMaps.keySet();
+   List<Account> accList2 = [SELECT Id, Name, (SELECT Id FROM Opportunities WHERE StageName != 'Closed Lost') FROM Account WHERE Id IN :accdIds];
+    for(Account acc:accList2){
+        if(acc.Opportunities.size()> 0){
+            Trigger.oldMap.get(acc.id).addError('You can not Delete this Account. Because, it has related Opp stage of which is not Closed Lost');
+        }  
+     }
 }
 
 }
