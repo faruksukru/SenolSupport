@@ -1,4 +1,4 @@
-trigger AccountTrigger on Account (before insert, before update, after insert, after update, before delete) {
+trigger AccountTrigger on Account (before insert, before update, after insert, after update, before delete, after delete) {
   
     if(trigger.isBefore && trigger.isInsert)
   {
@@ -22,5 +22,8 @@ trigger AccountTrigger on Account (before insert, before update, after insert, a
   {
     AccountTriggerHandler.deleteAccount(trigger.oldMap);
   }
-  
+  if(trigger.isAfter && trigger.isDelete)
+  {
+    AccountTriggerHandler.sendDeleteEmail(trigger.old);
+  }
   }

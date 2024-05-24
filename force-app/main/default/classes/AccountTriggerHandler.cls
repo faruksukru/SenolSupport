@@ -134,4 +134,22 @@ public static void deleteAccount (Map<Id,Account> oldAccMaps){
      }
 }
 
+public static void sendDeleteEmail(List<Account> accList) {
+    List<Messaging.SingleEmailMessage> allEmails = new List<Messaging.SingleEmailMessage>();
+    for(Account acc:accList){
+        Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();//Yeni bir email ornegi olusturduk.
+        List<String> emailAddress = new List<String>();//Alici adreslerini tutan list olsurduk
+        List<String> emailAddressforCC = new List<String> {'nurata1613@gmail.com'};//Alici adreslerini tutan list olsurduk
+        emailAddress.add(UserInfo.getUserEmail());//Alici adresini kullanıcı adresi olarak sectik.
+        email.setCcAddresses(emailAddressforCC);//Alici adresi ile beraber gonderilecek olsun.
+        email.setToAddresses(emailAddress);
+        email.setToAddresses(emailAddress);
+        email.setSubject('An Account is deleted');//Konu bilgisi girdik.
+        email.setPlainTextBody('Hi, \n\n '+acc.Name+' Account Has been Deleted');
+        allEmails.add(email);
+    }
+    Messaging.sendEmail(allEmails);//Email gonder
+
+
+}
 }
