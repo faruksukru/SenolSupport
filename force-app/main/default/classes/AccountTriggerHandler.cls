@@ -60,10 +60,10 @@ public static void createContactOpp(List<Account> accList){
         oppList.add(opp);
     }
     if(conList.size()>0){// Bu kısım for dongusu icerisine yazılmaz.
-        INSERT conList;//After kullandigimiz icin DML kullandık, Contact listi database'e aktardık.
+        Database.SaveResult[] results = Database.insert(conList, false); //After kullandigimiz icin Database kullandık, Contact listi database'e aktardık.
     }  
     if(oppList.size()>0){
-        INSERT oppList;
+        Database.SaveResult[] results = Database.insert(oppList, false); 
     }
 }
 
@@ -136,20 +136,53 @@ public static void deleteAccount (Map<Id,Account> oldAccMaps){
 
 public static void sendDeleteEmail(List<Account> accList) {
     List<Messaging.SingleEmailMessage> allEmails = new List<Messaging.SingleEmailMessage>();
+    Set<Id> accountIds = new Set<Id>();
     for(Account acc:accList){
+        accountIds.add(acc.Id);
         Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();//Yeni bir email ornegi olusturduk.
         List<String> emailAddress = new List<String>();//Alici adreslerini tutan list olsurduk
         List<String> emailAddressforCC = new List<String> {'nurata1613@gmail.com'};//Alici adreslerini tutan list olsurduk
         emailAddress.add(UserInfo.getUserEmail());//Alici adresini kullanıcı adresi olarak sectik.
         email.setCcAddresses(emailAddressforCC);//Alici adresi ile beraber gonderilecek olsun.
         email.setToAddresses(emailAddress);
-        email.setToAddresses(emailAddress);
         email.setSubject('An Account is deleted');//Konu bilgisi girdik.
         email.setPlainTextBody('Hi, \n\n '+acc.Name+' Account Has been Deleted');
         allEmails.add(email);
     }
-    Messaging.sendEmail(allEmails);//Email gonder
+    if (!allEmails.isEmpty()) {
+        Messaging.sendEmail(allEmails);
+    }
+   List<Contact> relatedContacts = [SELECT Email, FirstName FROM Contact WHERE AccountId IN :accountIds AND IsDeleted = TRUE ALL ROWS];
+        
+   List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+    for (Contact contact : relatedContacts) {
+        Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+        email.setToAddresses(new String[] { contact.Email });
+        email.setSubject('Account Deleted Notification');
+        email.setPlainTextBody('Dear ' + contact.FirstName + ',\n\nWe wanted to inform you that the account associated with this email has been deleted.\n\nBest regards');
+        emails.add(email);
+    }
+    
+    if (!emails.isEmpty()) {
+        Messaging.sendEmail(emails);
+    }
 
+}
 
+public static void sendUndeleteEmail(List<Account> undeleteAccs){
+    List<Messaging.SingleEmailMessage> allEmails = new List <Messaging.SingleEmailMessage>();
+         
+         for(Account acc: undeleteAccs){
+             Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();//Yeni bir email ornegi olusturduk.
+             List<String> emailAddress = new List<String>();//Alici adreslerini tutan list olsurduk
+             emailAddress.add(UserInfo.getUserEmail());//Alici adresini kullanıcı adresi olarak sectik.
+             email.setToAddresses(emailAddress);
+             email.setSubject('An Account is undeleted');
+             email.setPlainTextBody('Hi, \n\n '+acc.Name+' Account Has been Undeleted');
+             allEmails.add(email);
+         }
+         if (!allEmails.isEmpty()) {
+             Messaging.sendEmail(allEmails);
+         }
 }
 }
